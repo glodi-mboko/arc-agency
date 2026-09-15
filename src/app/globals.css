@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+:root {
+  --radius: 0.65rem;
+
+  /* Neutrals */
+  --background: #ffffff;
+  --foreground: #1b2a4a;
+  --card: #ffffff;
+  --card-foreground: #1b2a4a;
+  --popover: #ffffff;
+  --popover-foreground: #1b2a4a;
+  --border: #e2e6f0;
+  --input: #e2e6f0;
+  --ring: #f07c2e;
+
+  /* Brand: navy (primary), orange (accent), ice blue (muted) */
+  --primary: #1b2a4a;
+  --primary-foreground: #ffffff;
+  --secondary: #e4ecfb;
+  --secondary-foreground: #1b2a4a;
+  --muted: #f4f6fb;
+  --muted-foreground: #6b7690;
+  --accent: #f07c2e;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  /* Status colors used across the app (badges, timeline) */
+  --status-registered: #6b7690;
+  --status-transit: #2563eb;
+  --status-arrived: #f07c2e;
+  --status-delivered: #16a34a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-status-registered: var(--status-registered);
+  --color-status-transit: var(--status-transit);
+  --color-status-arrived: var(--status-arrived);
+  --color-status-delivered: var(--status-delivered);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, "Segoe UI", Roboto, Calibri, Arial, sans-serif;
+}
+
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  body {
+    background: white;
+  }
+}
