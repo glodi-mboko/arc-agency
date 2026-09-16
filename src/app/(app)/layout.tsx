@@ -6,6 +6,7 @@ import {
   getCurrentAgent,
   getActiveAgencyId,
 } from "@/lib/queries/current-agent";
+import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import type { AgentRole } from "@/lib/types";
@@ -30,17 +31,19 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     .single();
 
   return (
-    <div className="flex min-h-screen bg-muted/40">
-      <Sidebar
-        agencyLabel={agency ? `${agency.city}, ${agency.country}` : ""}
-      />
-      <div className="flex-1 flex flex-col min-w-0">
-        <Topbar
-          agentName={agent.full_name}
-          agentRole={ROLE_LABELS[agent.role as AgentRole] ?? agent.role}
+    <SidebarProvider>
+      <div className="flex min-h-screen bg-muted/40">
+        <Sidebar
+          agencyLabel={agency ? `${agency.city}, ${agency.country}` : ""}
         />
-        <main className="flex-1">{children}</main>
+        <div className="flex-1 flex flex-col min-w-0">
+          <Topbar
+            agentName={agent.full_name}
+            agentRole={ROLE_LABELS[agent.role as AgentRole] ?? agent.role}
+          />
+          <main className="flex-1">{children}</main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
