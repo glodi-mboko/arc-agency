@@ -23,24 +23,28 @@ export function WeeklyChart({ data }: WeeklyChartProps) {
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            stroke="var(--muted-foreground)"
+            stroke="rgb(var(--muted-foreground))"
           />
           <YAxis
             fontSize={12}
             tickLine={false}
             axisLine={false}
             allowDecimals={false}
-            stroke="var(--muted-foreground)"
+            stroke="rgb(var(--muted-foreground))"
           />
           <Tooltip
-            cursor={{ fill: "var(--muted)" }}
+            cursor={{ fill: "rgb(var(--muted))" }}
             contentStyle={{
               borderRadius: 8,
-              borderColor: "var(--border)",
+              borderColor: "rgb(var(--border))",
               fontSize: 12,
             }}
           />
-          <Bar dataKey="count" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+          <Bar
+            dataKey="count"
+            fill="rgb(var(--accent))"
+            radius={[4, 4, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>
