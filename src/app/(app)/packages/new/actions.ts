@@ -66,7 +66,10 @@ export async function createPackage(
     .single();
 
   if (senderError || !sender) {
-    return { error: "Impossible d'enregistrer l'expéditeur. Réessayez." };
+    console.error("createPackage: senders insert failed", senderError);
+    return {
+      error: `Impossible d'enregistrer l'expéditeur. ${senderError?.message ?? "Réessayez."}`,
+    };
   }
 
   const { data: destinationAgency } = await supabase
@@ -87,7 +90,10 @@ export async function createPackage(
     .single();
 
   if (recipientError || !recipient) {
-    return { error: "Impossible d'enregistrer le destinataire. Réessayez." };
+    console.error("createPackage: recipients insert failed", recipientError);
+    return {
+      error: `Impossible d'enregistrer le destinataire. ${recipientError?.message ?? "Réessayez."}`,
+    };
   }
 
   const totalAmount = input.weightKg * input.pricePerKg;
@@ -113,7 +119,10 @@ export async function createPackage(
     .single();
 
   if (packageError || !pkg) {
-    return { error: "Impossible d'enregistrer le colis. Réessayez." };
+    console.error("createPackage: packages insert failed", packageError);
+    return {
+      error: `Impossible d'enregistrer le colis. ${packageError?.message ?? "Réessayez."}`,
+    };
   }
 
   if (input.amountPaid > 0) {
