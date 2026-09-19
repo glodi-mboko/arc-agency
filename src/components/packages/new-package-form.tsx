@@ -31,18 +31,22 @@ const packageFormSchema = z
     destinationAgencyId: z
       .string()
       .min(1, "Choisissez l'agence de destination"),
-    lastName: z.string().min(1, "Nom requis"),
+    lastName: z.string().min(1, "Le nom est requis"),
     middleName: z.string().optional(),
-    firstName: z.string().min(1, "Prénom requis"),
+    firstName: z.string().min(1, "Le prénom est requis"),
     street: z.string().optional(),
     neighborhood: z.string().optional(),
     city: z.string().optional(),
-    idType: z.enum(["passport", "voter_card", "driver_license", "other"]),
-    idNumber: z.string().min(1, "Numéro de pièce requis"),
-    whatsapp: z.string().min(1, "Numéro WhatsApp requis"),
-    recipientFullName: z.string().min(1, "Nom du destinataire requis"),
-    recipientPhone: z.string().min(1, "Téléphone requis"),
-    recipientCity: z.string().min(1, "Ville requise"),
+    idType: z.string().min(1, "Le type de pièce est requis"),
+    idNumber: z.string().optional(),
+    whatsapp: z.string().min(1, "Le WhatsApp est requis"),
+
+    recipientFullName: z.string().min(1, "Le nom du destinataire est requis"),
+    recipientPhone: z.string().min(1, "Le téléphone est requis"),
+    recipientCity: z.string().optional(),
+    recipientCountry: z.string(),
+    details: z.string().optional(),
+
     packageTypeId: z.string().min(1, "Type de colis requis"),
     weightKg: z
       .string()
@@ -161,7 +165,7 @@ export function NewPackageForm({
         neighborhood: values.neighborhood || null,
         city: values.city || null,
         id_type: values.idType,
-        id_number: values.idNumber,
+        id_number: values.idNumber || null,
         whatsapp: values.whatsapp,
       })
       .select()
@@ -182,7 +186,7 @@ export function NewPackageForm({
         full_name: values.recipientFullName,
         phone: values.recipientPhone,
         country: recipientCountry,
-        city: values.recipientCity,
+        city: values.recipientCity || null,
       })
       .select()
       .single();
@@ -212,6 +216,7 @@ export function NewPackageForm({
         payment_method: values.paymentMethod,
         amount_paid: amountPaidValue,
         agent_id: agentId,
+        details: values.details || null,
       })
       .select()
       .single();
@@ -528,6 +533,16 @@ export function NewPackageForm({
                 {errors.packageTypeId.message}
               </p>
             )}
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="details">Détail du colis</Label>
+            <textarea
+              id="details"
+              {...register("details")}
+              rows={3}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Description du contenu, précisions particulières..."
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="weightKg">Poids (kg)</Label>

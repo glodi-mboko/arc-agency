@@ -15,6 +15,7 @@ export interface PackageDetail {
   status: PackageStatus;
   created_at: string;
   package_type: string;
+  details: string | null;
   weight_kg: number;
   price_per_kg: number;
   total_amount: number;
@@ -58,7 +59,7 @@ export async function getPackageDetail(
   const { data: pkg, error } = await supabase
     .from("packages")
     .select(
-      "id, tracking_number, status, created_at, package_type, weight_kg, price_per_kg, total_amount, payment_method, amount_paid, origin_agency_id, destination_agency_id, sender:senders(first_name,last_name,middle_name,street,neighborhood,city,whatsapp,id_type,id_number), recipient:recipients(full_name,phone,country,city), origin_agency:agencies!packages_origin_agency_id_fkey(name,city,country), destination_agency:agencies!packages_destination_agency_id_fkey(name,city,country)",
+      "id, tracking_number, status, created_at, package_type, details, weight_kg, price_per_kg, total_amount, payment_method, amount_paid, origin_agency_id, destination_agency_id, sender:senders(first_name,last_name,middle_name,street,neighborhood,city,whatsapp,id_type,id_number), recipient:recipients(full_name,phone,country,city), origin_agency:agencies!packages_origin_agency_id_fkey(name,city,country), destination_agency:agencies!packages_destination_agency_id_fkey(name,city,country)",
     )
     .eq("id", id)
     .single();
@@ -110,6 +111,7 @@ export async function getPackageDetail(
     status: pkg.status,
     created_at: pkg.created_at,
     package_type: pkg.package_type,
+    details: pkg.details || null,
     weight_kg: Number(pkg.weight_kg),
     price_per_kg: Number(pkg.price_per_kg),
     total_amount: Number(pkg.total_amount),

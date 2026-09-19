@@ -2,7 +2,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 
 import { createClient } from "@/lib/supabase/server";
-import type { Agent } from "@/lib/types";
+import type { Agent, Agency } from "@/lib/types";
 
 /**
  * Wrapped in React's cache() so multiple components rendered during the
@@ -26,6 +26,18 @@ export const getCurrentAgent = cache(async (): Promise<Agent | null> => {
     .single();
 
   return (agent as Agent) ?? null;
+});
+
+export const getActiveAgency = cache(async (): Promise<Agency | null> => {
+  const agencyId = await getActiveAgencyId();
+  if (!agencyId) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("agencies")
+    .select("*")
+    .eq("id", agencyId)
+    .single();
+  return (data as Agency) ?? null;
 });
 
 export const getActiveAgencyId = cache(async (): Promise<string | null> => {

@@ -180,6 +180,12 @@ export default async function PackageDetailPage({
         </CardHeader>
         <CardContent className="grid sm:grid-cols-4 gap-4 text-sm">
           <Field label="Type de colis" value={pkg.package_type} />
+          {pkg.details && (
+            <div className="sm:col-span-2">
+              <p className="text-sm text-muted-foreground">Détail du colis</p>
+              <p className="text-sm whitespace-pre-wrap">{pkg.details}</p>
+            </div>
+          )}
           <Field label="Poids total" value={`${pkg.weight_kg} kg`} />
           <Field
             label="Tarif / kg"

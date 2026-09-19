@@ -20,6 +20,8 @@ export interface Agency {
   country: string;
   city: string;
   created_at: string;
+  price_per_kg: number | null;
+  currency: 'USD' | 'EUR' | null;
 }
 
 export interface Agent {
@@ -76,6 +78,8 @@ export interface Package {
   status: PackageStatus;
   agent_id: string;
   created_at: string;
+  details: string | null;
+  price_per_kg_currency: 'USD' | 'EUR' | null;
 }
 
 export interface StatusHistory {
