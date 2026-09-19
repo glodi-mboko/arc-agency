@@ -6,6 +6,7 @@ import { Download, FileText } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { currencySymbol, type Currency } from "@/lib/currency";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "@/lib/types";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -41,7 +42,14 @@ function statusOf(
   return "partial";
 }
 
-export function ExportButtons({ agencyId }: { agencyId: string }) {
+export function ExportButtons({
+  agencyId,
+  currency,
+}: {
+  agencyId: string;
+  currency: Currency | null;
+}) {
+  const symbol = currencySymbol(currency);
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
 
@@ -101,9 +109,9 @@ export function ExportButtons({ agencyId }: { agencyId: string }) {
     const header = [
       "N° de suivi",
       "Client",
-      "Montant total (€)",
-      "Montant payé (€)",
-      "Solde restant (€)",
+      `Montant total (${symbol})`,
+      `Montant payé (${symbol})`,
+      `Solde restant (${symbol})`,
       "Mode de paiement",
       "Statut",
       "Date",

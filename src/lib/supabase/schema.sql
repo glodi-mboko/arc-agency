@@ -25,6 +25,8 @@ create table agencies (
     name text not null, -- e.g. "Paris Agency"
     country text not null, -- e.g. "France"
     city text not null, -- e.g. "Paris"
+    price_per_kg numeric(10, 2), -- e.g. 17.00 (Kinshasa) or 15.00 (Paris)
+    currency text check (currency in ('USD', 'EUR')),
     created_at timestamptz not null default now()
 );
 
@@ -63,7 +65,7 @@ create table senders (
             'other'
         )
     ),
-    id_number text not null,
+    id_number text,
     whatsapp text not null,
     created_at timestamptz not null default now()
 );
@@ -74,7 +76,7 @@ create table recipients (
     full_name text not null,
     phone text not null,
     country text not null,
-    city text not null,
+    city text,
     created_at timestamptz not null default now()
 );
 
@@ -87,8 +89,10 @@ create table packages (
     sender_id uuid not null references senders (id),
     recipient_id uuid not null references recipients (id),
     package_type text not null,
+    details text,
     weight_kg numeric(10, 2) not null,
     price_per_kg numeric(10, 2) not null,
+    price_per_kg_currency text check (price_per_kg_currency in ('USD', 'EUR')),
     total_amount numeric(10, 2) not null,
     payment_method text not null check (
         payment_method in (

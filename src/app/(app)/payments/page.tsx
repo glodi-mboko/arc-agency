@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { getActiveAgencyId } from "@/lib/queries/current-agent";
+import { getActiveAgencyId, getActiveAgency } from "@/lib/queries/current-agent";
 import { getAllAgencies } from "@/lib/queries/agencies";
 import type {
   PaymentsFilters,
@@ -18,10 +18,11 @@ export default async function PaymentsPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const [params, agencyId, agencies] = await Promise.all([
+  const [params, agencyId, agencies, activeAgency] = await Promise.all([
     searchParams,
     getActiveAgencyId(),
     getAllAgencies(),
+    getActiveAgency(),
   ]);
 
   const page = Number(params.page) || 1;
@@ -45,7 +46,7 @@ export default async function PaymentsPage({
         <h1 className="text-2xl font-bold text-primary">
           Rapport de paiements
         </h1>
-        <ExportButtons agencyId={agencyId!} />
+        <ExportButtons agencyId={agencyId!} currency={activeAgency?.currency ?? null} />
       </div>
 
       <PaymentsFilterBar agencies={agencies} />
@@ -54,7 +55,12 @@ export default async function PaymentsPage({
         key={JSON.stringify(filters) + page}
         fallback={<PackagesResultsSkeleton />}
       >
-        <PaymentsResults agencyId={agencyId!} filters={filters} page={page} />
+        <PaymentsResults
+          agencyId={agencyId!}
+          filters={filters}
+          page={page}
+          currency={activeAgency?.currency ?? null}
+        />
       </Suspense>
     </div>
   );

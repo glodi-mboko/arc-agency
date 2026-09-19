@@ -8,6 +8,7 @@ import { PAYMENT_METHOD_LABELS } from "@/lib/types";
 import { PaginationControls } from "@/components/packages/pagination-controls";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { formatMoney, type Currency } from "@/lib/currency";
 
 const PAGE_SIZE = 10;
 
@@ -27,12 +28,14 @@ interface PaymentsResultsProps {
   agencyId: string;
   filters: PaymentsFilters;
   page: number;
+  currency: Currency | null;
 }
 
 export async function PaymentsResults({
   agencyId,
   filters,
   page,
+  currency,
 }: PaymentsResultsProps) {
   const report = await getPaymentsReport(agencyId, filters);
   const totalPages = Math.max(1, Math.ceil(report.total / PAGE_SIZE));
@@ -47,7 +50,7 @@ export async function PaymentsResults({
                 Total encaissé
               </div>
               <div className="text-2xl font-bold text-primary mt-1">
-                {report.totalCollected.toLocaleString("fr-FR")} €
+                {formatMoney(report.totalCollected, currency)}
               </div>
             </div>
             <Wallet className="h-5 w-5 text-muted-foreground" />
@@ -60,7 +63,7 @@ export async function PaymentsResults({
                 Solde restant à percevoir
               </div>
               <div className="text-2xl font-bold text-accent mt-1">
-                {report.totalOutstanding.toLocaleString("fr-FR")} €
+                {formatMoney(report.totalOutstanding, currency)}
               </div>
             </div>
             <AlertCircle className="h-5 w-5 text-muted-foreground" />
@@ -131,18 +134,18 @@ export async function PaymentsResults({
                       </td>
                       <td className="px-4 py-3">{r.client_name}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {r.total_amount.toFixed(2)} €
+                        {formatMoney(r.total_amount, currency)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-green-700">
-                        {r.amount_paid.toFixed(2)} €
+                        {formatMoney(r.amount_paid, currency)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {r.balance > 0 ? (
                           <span className="text-accent font-medium">
-                            {r.balance.toFixed(2)} €
+                            {formatMoney(r.balance, currency)}
                           </span>
                         ) : (
-                          "0,00 €"
+                          formatMoney(0, currency)
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -173,13 +176,13 @@ export async function PaymentsResults({
                       {report.total > 1 ? "s" : ""})
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {report.totalAmountSum.toFixed(2)} €
+                      {formatMoney(report.totalAmountSum, currency)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-green-700">
-                      {report.totalCollected.toFixed(2)} €
+                      {formatMoney(report.totalCollected, currency)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-accent">
-                      {report.totalOutstanding.toFixed(2)} €
+                      {formatMoney(report.totalOutstanding, currency)}
                     </td>
                     <td colSpan={3}></td>
                   </tr>

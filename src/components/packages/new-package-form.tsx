@@ -13,13 +13,14 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { createPackage } from "@/app/(app)/packages/new/actions";
 import { KINSHASA_COMMUNES } from "@/lib/constants/kinshasa-communes";
+import { formatMoney, currencySymbol } from "@/lib/currency";
 import {
   ID_TYPE_LABELS,
   PAYMENT_METHOD_LABELS,
   type Agency,
-  type Package,
+  type IdType,
 } from "@/lib/types";
 import type { PackageType } from "@/lib/queries/package-types";
 
@@ -55,13 +56,6 @@ const packageFormSchema = z
         (v) => !isNaN(Number(v)) && Number(v) > 0,
         "Le poids doit être positif",
       ),
-    pricePerKg: z
-      .string()
-      .min(1, "Prix requis")
-      .refine(
-        (v) => !isNaN(Number(v)) && Number(v) > 0,
-        "Le prix doit être positif",
-      ),
     paymentMethod: z.enum(["cash", "mobile_money", "card"]),
     paymentLocation: z.enum(["origin", "destination"]),
     amountPaid: z
@@ -92,7 +86,9 @@ export function NewPackageForm({
   agentId,
 }: NewPackageFormProps) {
   const [serverError, setServerError] = useState<string | null>(null);
-  const [createdPackage, setCreatedPackage] = useState<Package | null>(null);
+  const [createdPackage, setCreatedPackage] = useState<{
+    tracking_number: string;
+  } | null>(null);
 
   const defaultDestination =
     agencies.find((a) => a.id !== defaultOriginId)?.id ?? "";
@@ -118,17 +114,22 @@ export function NewPackageForm({
   });
 
   const weightKg = Number(watch("weightKg")) || 0;
-  const pricePerKg = Number(watch("pricePerKg")) || 0;
   const amountPaid = Number(watch("amountPaid")) || 0;
   const originAgencyId = watch("originAgencyId");
   const destinationAgencyId = watch("destinationAgencyId");
 
-  const totalAmount = weightKg * pricePerKg;
-  const balance = totalAmount - amountPaid;
   const originAgency = agencies.find((a) => a.id === originAgencyId);
   const destinationAgency = agencies.find((a) => a.id === destinationAgencyId);
   const originIsDRC = originAgency?.country === DRC_COUNTRY_NAME;
   const destinationIsDRC = destinationAgency?.country === DRC_COUNTRY_NAME;
+
+  // Price/kg and currency are fixed per origin agency (17$ Kinshasa, 15€ Paris),
+  // not entered manually, so historical packages keep the tariff in force
+  // at creation time even if the agency's rate changes later.
+  const pricePerKg = originAgency?.price_per_kg ?? 0;
+  const currency = originAgency?.currency ?? "USD";
+  const totalAmount = weightKg * pricePerKg;
+  const balance = totalAmount - amountPaid;
 
   const originReg = register("originAgencyId");
   const destinationReg = register("destinationAgencyId");
@@ -153,95 +154,51 @@ export function NewPackageForm({
 
   async function onSubmit(values: PackageFormValues) {
     setServerError(null);
-    const supabase = createClient();
 
-    const { data: sender, error: senderError } = await supabase
-      .from("senders")
-      .insert({
-        last_name: values.lastName,
-        middle_name: values.middleName || null,
-        first_name: values.firstName,
-        street: values.street || null,
-        neighborhood: values.neighborhood || null,
-        city: values.city || null,
-        id_type: values.idType,
-        id_number: values.idNumber || null,
-        whatsapp: values.whatsapp,
-      })
-      .select()
-      .single();
-
-    if (senderError || !sender) {
-      setServerError("Impossible d'enregistrer l'expéditeur. Réessayez.");
+    if (pricePerKg <= 0) {
+      setServerError("Tarif au kg indisponible pour cette agence d'origine.");
       return;
     }
 
-    // Country is derived from the destination agency, not entered manually.
-    const recipientCountry =
-      agencies.find((a) => a.id === values.destinationAgencyId)?.country ?? "";
-
-    const { data: recipient, error: recipientError } = await supabase
-      .from("recipients")
-      .insert({
-        full_name: values.recipientFullName,
-        phone: values.recipientPhone,
-        country: recipientCountry,
-        city: values.recipientCity || null,
-      })
-      .select()
-      .single();
-
-    if (recipientError || !recipient) {
-      setServerError("Impossible d'enregistrer le destinataire. Réessayez.");
-      return;
-    }
-
-    const weightKgValue = Number(values.weightKg);
-    const pricePerKgValue = Number(values.pricePerKg);
-    const amountPaidValue = Number(values.amountPaid);
     const packageTypeName =
       packageTypes.find((t) => t.id === values.packageTypeId)?.name ?? "";
+    const locationAgencyId =
+      values.paymentLocation === "origin"
+        ? values.originAgencyId
+        : values.destinationAgencyId;
 
-    const { data: pkg, error: packageError } = await supabase
-      .from("packages")
-      .insert({
-        origin_agency_id: values.originAgencyId,
-        destination_agency_id: values.destinationAgencyId,
-        sender_id: sender.id,
-        recipient_id: recipient.id,
-        package_type: packageTypeName,
-        weight_kg: weightKgValue,
-        price_per_kg: pricePerKgValue,
-        total_amount: weightKgValue * pricePerKgValue,
-        payment_method: values.paymentMethod,
-        amount_paid: amountPaidValue,
-        agent_id: agentId,
-        details: values.details || null,
-      })
-      .select()
-      .single();
+    const result = await createPackage({
+      originAgencyId: values.originAgencyId,
+      destinationAgencyId: values.destinationAgencyId,
+      lastName: values.lastName,
+      middleName: values.middleName || null,
+      firstName: values.firstName,
+      street: values.street || null,
+      neighborhood: values.neighborhood || null,
+      city: values.city || null,
+      idType: values.idType as IdType,
+      idNumber: values.idNumber || null,
+      whatsapp: values.whatsapp,
+      recipientFullName: values.recipientFullName,
+      recipientPhone: values.recipientPhone,
+      recipientCity: values.recipientCity || null,
+      packageTypeName,
+      details: values.details || null,
+      weightKg: Number(values.weightKg),
+      pricePerKg,
+      currency,
+      paymentMethod: values.paymentMethod,
+      paymentLocationAgencyId: locationAgencyId,
+      amountPaid: Number(values.amountPaid),
+      agentId,
+    });
 
-    if (packageError || !pkg) {
-      setServerError("Impossible d'enregistrer le colis. Réessayez.");
+    if (result.error || !result.data) {
+      setServerError(result.error ?? "Impossible d'enregistrer le colis. Réessayez.");
       return;
     }
 
-    if (amountPaidValue > 0) {
-      const locationAgencyId =
-        values.paymentLocation === "origin"
-          ? values.originAgencyId
-          : values.destinationAgencyId;
-
-      await supabase.from("payments").insert({
-        package_id: pkg.id,
-        amount: amountPaidValue,
-        payment_method: values.paymentMethod,
-        location_agency_id: locationAgencyId,
-        agent_id: agentId,
-      });
-    }
-
-    setCreatedPackage(pkg);
+    setCreatedPackage(result.data);
   }
 
   if (createdPackage) {
@@ -559,25 +516,19 @@ export function NewPackageForm({
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="pricePerKg">Prix au kg (€)</Label>
-            <Input
-              id="pricePerKg"
-              type="number"
-              step="0.1"
-              {...register("pricePerKg")}
-            />
-            {errors.pricePerKg && (
-              <p className="text-xs text-destructive">
-                {errors.pricePerKg.message}
-              </p>
-            )}
+            <Label>Tarif au kg</Label>
+            <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm">
+              {pricePerKg > 0
+                ? formatMoney(pricePerKg, currency)
+                : "Sélectionnez l'agence d'origine"}
+            </div>
           </div>
 
           <div className="space-y-2 sm:col-span-4">
-            <Label>Montant total (€)</Label>
+            <Label>Montant total</Label>
             <Input
               readOnly
-              value={`${totalAmount.toFixed(2)} € (calculé)`}
+              value={`${formatMoney(totalAmount, currency)} (calculé)`}
               className="bg-muted"
             />
           </div>
@@ -609,7 +560,9 @@ export function NewPackageForm({
             </NativeSelect>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="amountPaid">Montant payé (€)</Label>
+            <Label htmlFor="amountPaid">
+              Montant payé ({currencySymbol(currency)})
+            </Label>
             <Input
               id="amountPaid"
               type="number"
@@ -632,7 +585,7 @@ export function NewPackageForm({
               }`}
             >
               {balance > 0
-                ? `${balance.toFixed(2)} € à payer${
+                ? `${formatMoney(balance, currency)} à payer${
                     destinationAgency ? ` à ${destinationAgency.name}` : ""
                   }`
                 : "Payé intégralement"}
