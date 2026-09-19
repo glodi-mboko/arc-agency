@@ -45,7 +45,6 @@ const packageFormSchema = z
     recipientFullName: z.string().min(1, "Le nom du destinataire est requis"),
     recipientPhone: z.string().min(1, "Le téléphone est requis"),
     recipientCity: z.string().optional(),
-    recipientCountry: z.string(),
     details: z.string().optional(),
 
     packageTypeId: z.string().min(1, "Type de colis requis"),
@@ -117,17 +116,21 @@ export function NewPackageForm({
   const amountPaid = Number(watch("amountPaid")) || 0;
   const originAgencyId = watch("originAgencyId");
   const destinationAgencyId = watch("destinationAgencyId");
+  const paymentLocation = watch("paymentLocation");
 
   const originAgency = agencies.find((a) => a.id === originAgencyId);
   const destinationAgency = agencies.find((a) => a.id === destinationAgencyId);
   const originIsDRC = originAgency?.country === DRC_COUNTRY_NAME;
   const destinationIsDRC = destinationAgency?.country === DRC_COUNTRY_NAME;
 
-  // Price/kg and currency are fixed per origin agency (17$ Kinshasa, 15€ Paris),
-  // not entered manually, so historical packages keep the tariff in force
-  // at creation time even if the agency's rate changes later.
-  const pricePerKg = originAgency?.price_per_kg ?? 0;
-  const currency = originAgency?.currency ?? "USD";
+  // Price/kg and currency follow the agency where the client actually pays
+  // (17$ Kinshasa, 15€ Paris), not the agent's own connected agency — an
+  // agent connected in Paris can still register a payment due in Kinshasa,
+  // in which case the tariff shown must switch to the Kinshasa rate/$.
+  const paymentLocationAgency =
+    paymentLocation === "destination" ? destinationAgency : originAgency;
+  const pricePerKg = paymentLocationAgency?.price_per_kg ?? 0;
+  const currency = paymentLocationAgency?.currency ?? "USD";
   const totalAmount = weightKg * pricePerKg;
   const balance = totalAmount - amountPaid;
 
@@ -156,7 +159,7 @@ export function NewPackageForm({
     setServerError(null);
 
     if (pricePerKg <= 0) {
-      setServerError("Tarif au kg indisponible pour cette agence d'origine.");
+      setServerError("Tarif au kg indisponible pour l'agence du lieu de paiement.");
       return;
     }
 
@@ -520,8 +523,11 @@ export function NewPackageForm({
             <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm">
               {pricePerKg > 0
                 ? formatMoney(pricePerKg, currency)
-                : "Sélectionnez l'agence d'origine"}
+                : "Tarif indisponible pour cette agence"}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Selon le lieu de paiement — {paymentLocationAgency?.name ?? "..."}
+            </p>
           </div>
 
           <div className="space-y-2 sm:col-span-4">
