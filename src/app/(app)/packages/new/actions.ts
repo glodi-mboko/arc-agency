@@ -1,5 +1,7 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import { createClient } from "@/lib/supabase/server";
 import type { IdType, PaymentMethod } from "@/lib/types";
 
@@ -49,26 +51,32 @@ export async function createPackage(
     return { error: "Session expirée, merci de vous reconnecter." };
   }
 
-  const { data: sender, error: senderError } = await supabase
-    .from("senders")
-    .insert({
-      last_name: input.lastName,
-      middle_name: input.middleName,
-      first_name: input.firstName,
-      street: input.street,
-      neighborhood: input.neighborhood,
-      city: input.city,
-      id_type: input.idType,
-      id_number: input.idNumber,
-      whatsapp: input.whatsapp,
-    })
-    .select()
-    .single();
+  // senders/recipients can only be read back (SELECT policy) once a package
+  // links to them, so right after inserting them there is no package yet
+  // that would make the row visible. Postgres enforces that same SELECT
+  // policy on the RETURNING clause of INSERT ... RETURNING, which is what
+  // made `.insert().select()` fail with "new row violates row-level
+  // security policy" even though the INSERT itself was allowed. Generating
+  // the id ourselves and skipping `.select()` avoids the RETURNING step
+  // (and the SELECT-policy check that comes with it) entirely.
+  const senderId = randomUUID();
+  const { error: senderError } = await supabase.from("senders").insert({
+    id: senderId,
+    last_name: input.lastName,
+    middle_name: input.middleName,
+    first_name: input.firstName,
+    street: input.street,
+    neighborhood: input.neighborhood,
+    city: input.city,
+    id_type: input.idType,
+    id_number: input.idNumber,
+    whatsapp: input.whatsapp,
+  });
 
-  if (senderError || !sender) {
+  if (senderError) {
     console.error("createPackage: senders insert failed", senderError);
     return {
-      error: `Impossible d'enregistrer l'expéditeur. ${senderError?.message ?? "Réessayez."}`,
+      error: `Impossible d'enregistrer l'expéditeur. ${senderError.message}`,
     };
   }
 
@@ -78,21 +86,19 @@ export async function createPackage(
     .eq("id", input.destinationAgencyId)
     .single();
 
-  const { data: recipient, error: recipientError } = await supabase
-    .from("recipients")
-    .insert({
-      full_name: input.recipientFullName,
-      phone: input.recipientPhone,
-      country: destinationAgency?.country ?? "",
-      city: input.recipientCity,
-    })
-    .select()
-    .single();
+  const recipientId = randomUUID();
+  const { error: recipientError } = await supabase.from("recipients").insert({
+    id: recipientId,
+    full_name: input.recipientFullName,
+    phone: input.recipientPhone,
+    country: destinationAgency?.country ?? "",
+    city: input.recipientCity,
+  });
 
-  if (recipientError || !recipient) {
+  if (recipientError) {
     console.error("createPackage: recipients insert failed", recipientError);
     return {
-      error: `Impossible d'enregistrer le destinataire. ${recipientError?.message ?? "Réessayez."}`,
+      error: `Impossible d'enregistrer le destinataire. ${recipientError.message}`,
     };
   }
 
@@ -103,8 +109,8 @@ export async function createPackage(
     .insert({
       origin_agency_id: input.originAgencyId,
       destination_agency_id: input.destinationAgencyId,
-      sender_id: sender.id,
-      recipient_id: recipient.id,
+      sender_id: senderId,
+      recipient_id: recipientId,
       package_type: input.packageTypeName,
       details: input.details,
       weight_kg: input.weightKg,
@@ -113,7 +119,10 @@ export async function createPackage(
       total_amount: totalAmount,
       payment_method: input.paymentMethod,
       amount_paid: input.amountPaid,
-      agent_id: input.agentId,
+      // Must match auth.uid() for the "Agents can create packages for their
+      // agencies" policy's WITH CHECK — the session's own id, not whatever
+      // the client happened to send.
+      agent_id: user.id,
     })
     .select()
     .single();
@@ -131,7 +140,7 @@ export async function createPackage(
       amount: input.amountPaid,
       payment_method: input.paymentMethod,
       location_agency_id: input.paymentLocationAgencyId,
-      agent_id: input.agentId,
+      agent_id: user.id,
     });
   }
 
