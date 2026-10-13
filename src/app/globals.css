@@ -39,6 +39,7 @@ body {
   background: rgb(var(--background));
   color: rgb(var(--foreground));
   font-family: -apple-system, "Segoe UI", Roboto, Calibri, Arial, sans-serif;
+  display: none !important;
 }
 
 @media print {
