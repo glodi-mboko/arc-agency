@@ -11,6 +11,7 @@ import { RecordPaymentDialog } from "@/components/packages/record-payment-dialog
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { formatMoney } from "@/lib/currency";
 import { ID_TYPE_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/types";
 
 export default async function PackageDetailPage({
@@ -112,6 +113,7 @@ export default async function PackageDetailPage({
                   agentId={agent.id}
                   currentAmountPaid={pkg.amount_paid}
                   totalAmount={pkg.total_amount}
+                  currency={pkg.price_per_kg_currency}
                   originAgencyId={pkg.origin_agency_id}
                   originAgencyName={pkg.origin_agency.name}
                   destinationAgencyId={pkg.destination_agency_id}
@@ -158,7 +160,7 @@ export default async function PackageDetailPage({
                   >
                     <div>
                       <div className="font-medium text-foreground">
-                        {p.amount.toFixed(2)} € ·{" "}
+                        {formatMoney(p.amount, pkg.price_per_kg_currency)} ·{" "}
                         {PAYMENT_METHOD_LABELS[p.payment_method]}
                       </div>
                       <div className="text-xs text-muted-foreground">
@@ -189,11 +191,11 @@ export default async function PackageDetailPage({
           <Field label="Poids total" value={`${pkg.weight_kg} kg`} />
           <Field
             label="Tarif / kg"
-            value={`${pkg.price_per_kg.toFixed(2)} €`}
+            value={formatMoney(pkg.price_per_kg, pkg.price_per_kg_currency)}
           />
           <Field
             label="Montant total"
-            value={`${pkg.total_amount.toFixed(2)} €`}
+            value={formatMoney(pkg.total_amount, pkg.price_per_kg_currency)}
             highlight
           />
           <Field
@@ -202,14 +204,14 @@ export default async function PackageDetailPage({
           />
           <Field
             label="Montant payé"
-            value={`${pkg.amount_paid.toFixed(2)} €`}
+            value={formatMoney(pkg.amount_paid, pkg.price_per_kg_currency)}
             positive
           />
           <Field
             label="Solde restant"
             value={
               balance > 0
-                ? `${balance.toFixed(2)} € à régler`
+                ? `${formatMoney(balance, pkg.price_per_kg_currency)} à régler`
                 : "Payé intégralement"
             }
             warn={balance > 0}

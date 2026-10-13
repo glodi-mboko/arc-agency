@@ -79,6 +79,8 @@ export async function getAuthorizedAgencies(
       name: row.agency_name,
       country: row.agency_country,
       city: row.agency_city,
+      price_per_kg: null,
+      currency: null,
       created_at: "",
     }));
 

@@ -17,6 +17,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
+import { formatMoney, type Currency } from "@/lib/currency";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "@/lib/types";
 
 interface RecordPaymentDialogProps {
@@ -25,6 +26,7 @@ interface RecordPaymentDialogProps {
   agentId: string;
   currentAmountPaid: number;
   totalAmount: number;
+  currency: Currency | null;
   originAgencyId: string;
   originAgencyName: string;
   destinationAgencyId: string;
@@ -37,6 +39,7 @@ export function RecordPaymentDialog({
   agentId,
   currentAmountPaid,
   totalAmount,
+  currency,
   originAgencyId,
   originAgencyName,
   destinationAgencyId,
@@ -115,19 +118,19 @@ export function RecordPaymentDialog({
             <div className="flex justify-between">
               <span className="text-muted-foreground">Déjà payé</span>
               <span className="font-medium">
-                {currentAmountPaid.toFixed(2)} €
+                {formatMoney(currentAmountPaid, currency)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Solde restant</span>
               <span className="font-medium text-accent">
-                {remaining.toFixed(2)} €
+                {formatMoney(remaining, currency)}
               </span>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="amount">Montant reçu (€)</Label>
+            <Label htmlFor="amount">Montant reçu</Label>
             <Input
               id="amount"
               type="number"

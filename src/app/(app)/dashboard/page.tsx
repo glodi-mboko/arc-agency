@@ -1,14 +1,18 @@
 import { Package, Weight, Wallet, Clock } from "lucide-react";
 
-import { getActiveAgencyId } from "@/lib/queries/current-agent";
+import { getActiveAgencyId, getActiveAgency } from "@/lib/queries/current-agent";
 import { getDashboardStats } from "@/lib/queries/dashboard";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { WeeklyChart } from "@/components/dashboard/weekly-chart";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { formatMoney } from "@/lib/currency";
 
 export default async function DashboardPage() {
-  const agencyId = await getActiveAgencyId();
+  const [agencyId, activeAgency] = await Promise.all([
+    getActiveAgencyId(),
+    getActiveAgency(),
+  ]);
   const stats = await getDashboardStats(agencyId!);
 
   return (
@@ -30,7 +34,7 @@ export default async function DashboardPage() {
         />
         <StatCard
           title="Revenus du mois"
-          value={`${stats.revenue.toLocaleString("fr-FR")} €`}
+          value={formatMoney(stats.revenue, activeAgency?.currency)}
           change={stats.revenueChange}
           icon={Wallet}
         />

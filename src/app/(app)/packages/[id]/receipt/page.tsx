@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { getPackageDetail } from "@/lib/queries/package-detail";
+import { formatMoney } from "@/lib/currency";
 import { PAYMENT_METHOD_LABELS, PACKAGE_STATUS_LABELS } from "@/lib/types";
 import { ReceiptQrCode } from "@/components/packages/receipt-qr-code";
 import { PrintButton } from "@/components/packages/print-button";
@@ -110,17 +111,17 @@ export default async function ReceiptPage({
             <Row label="Poids" value={`${pkg.weight_kg} kg`} alt />
             <Row
               label="Prix au kg"
-              value={`${pkg.price_per_kg.toFixed(2)} €`}
+              value={formatMoney(pkg.price_per_kg, pkg.price_per_kg_currency)}
             />
             <Row
               label="Montant total"
-              value={`${pkg.total_amount.toFixed(2)} €`}
+              value={formatMoney(pkg.total_amount, pkg.price_per_kg_currency)}
               alt
               bold
             />
             <Row
               label="Montant payé"
-              value={`${pkg.amount_paid.toFixed(2)} €`}
+              value={formatMoney(pkg.amount_paid, pkg.price_per_kg_currency)}
             />
             <Row
               label="Mode de paiement"
@@ -129,7 +130,11 @@ export default async function ReceiptPage({
             />
             <Row
               label="Solde restant"
-              value={balance > 0 ? `${balance.toFixed(2)} €` : "0,00 €"}
+              value={
+                balance > 0
+                  ? formatMoney(balance, pkg.price_per_kg_currency)
+                  : formatMoney(0, pkg.price_per_kg_currency)
+              }
               highlight={balance > 0}
             />
           </div>
